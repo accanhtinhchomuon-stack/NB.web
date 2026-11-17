@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Nợ Gia Đình - Bảo Mật & Đám Mây</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-heading { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col selection:bg-teal-500 selection:text-white">
+
+    <!-- ==================== AUTHENTICATION SCREEN ==================== -->
+    <div id="authScreen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 p-4">
+        <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
+            <!-- Auth Header -->
+            <div class="bg-slate-900 px-8 py-7 text-center relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-teal-500/20 rounded-full blur-2xl"></div>
+                <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
+                <div class="w-14 h-14 bg-gradient-to-tr from-teal-500 to-emerald-400 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-teal-500/30">
+                    <i data-lucide="shield-check" class="w-8 h-8"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white tracking-tight">Sổ Nợ Gia Đình</h1>
+                <p class="text-xs text-teal-300 font-medium mt-1">Tạo tài khoản bảo mật để bắt đầu quản lý sổ nợ gia đình</p>
+            </div>
+
+            <!-- Auth Tabs (Registration Active by Default) -->
+            <div id="authTabs" class="grid grid-cols-2 border-b border-slate-100 bg-slate-50/50">
+                <button type="button" onclick="switchAuthMode('register')" id="tabRegister" class="py-3.5 text-sm font-semibold text-teal-700 border-b-2 border-teal-600 bg-white transition">Đăng ký tài khoản mới</button>
+                <button type="button" onclick="switchAuthMode('login')" id="tabLogin" class="py-3.5 text-sm font-medium text-slate-500 hover:text-slate-700 transition">Đăng nhập</button>
+            </div>
+
+            <!-- Auth Form -->
+            <form id="authForm" onsubmit="handleAuthSubmit(event)" class="p-7 space-y-4">
+                <div id="authErrorBox" class="hidden p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start space-x-2">
+                    <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 mt-0.5"></i>
+                    <span id="authErrorText"></span>
+                </div>
+                <div id="authSuccessBox" class="hidden p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-start space-x-2">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 shrink-0 mt-0.5"></i>
+                    <span id="authSuccessText"></span>
+                </div>
+
+                <!-- Full Name / Display Name (Required on Register) -->
+                <div id="fullNameGroup">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Họ và tên / Tên hiển thị <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                            <i data-lucide="user" class="w-4 h-4"></i>
+                        </span>
+                        <input type="text" id="authFullName" required placeholder="VD: Nguyễn Văn An" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Địa chỉ Email <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                            <i data-lucide="mail" class="w-4 h-4"></i>
+                        </span>
+                        <input type="email" id="authEmail" required placeholder="nhapemail@example.com" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                    </div>
+                </div>
+
+                <div id="passwordFieldGroup">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Mật khẩu <span class="text-rose-500">*</span></label>
+                        <button type="button" id="forgotPassLink" onclick="switchAuthMode('reset')" class="hidden text-xs font-medium text-teal-600 hover:text-teal-700">Quên mật khẩu?</button>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                            <i data-lucide="lock" class="w-4 h-4"></i>
+                        </span>
+                        <input type="password" id="authPassword" required placeholder="Tối thiểu 6 ký tự" oninput="checkPasswordStrength()" class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                        <button type="button" onclick="togglePasswordVisibility('authPassword', 'eyeIcon1')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                            <i id="eyeIcon1" data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <!-- Password Strength Indicator (Visible in Register mode) -->
+                    <div id="strengthWrapper" class="mt-2">
+                        <div class="flex gap-1 h-1.5">
+                            <div id="strBar1" class="flex-1 rounded-full bg-slate-200 transition-colors"></div>
+                            <div id="strBar2" class="flex-1 rounded-full bg-slate-200 transition-colors"></div>
+                            <div id="strBar3" class="flex-1 rounded-full bg-slate-200 transition-colors"></div>
+                            <div id="strBar4" class="flex-1 rounded-full bg-slate-200 transition-colors"></div>
+                        </div>
+                        <p id="strengthText" class="text-[11px] text-slate-500 mt-1">Độ mạnh: Tối thiểu 6 ký tự (nên có chữ hoa, số & ký tự đặc biệt)</p>
+                    </div>
+                </div>
+
+                <div id="confirmPasswordGroup">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Xác nhận lại mật khẩu <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                            <i data-lucide="key-round" class="w-4 h-4"></i>
+                        </span>
+                        <input type="password" id="authConfirmPassword" required placeholder="Nhập lại mật khẩu" class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                        <button type="button" onclick="togglePasswordVisibility('authConfirmPassword', 'eyeIcon2')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                            <i id="eyeIcon2" data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Optional 4-digit PIN Setup during Registration -->
+                <div id="registerPinGroup">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Mã PIN khóa nhanh 4 số <span class="text-slate-400 font-normal lowercase">(tùy chọn)</span></label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                            <i data-lucide="shield" class="w-4 h-4"></i>
+                        </span>
+                        <input type="password" id="authRegisterPin" maxlength="4" inputmode="numeric" placeholder="VD: 1234 (Bỏ trống nếu cài sau)" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                    </div>
+                </div>
+
+                <button type="submit" id="authSubmitBtn" class="w-full py-3 bg-gradient-to-r from-slate-900 to-teal-800 hover:from-slate-800 hover:to-teal-700 text-white rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2">
+                    <span id="authSubmitText">Tạo tài khoản & Bắt đầu sử dụng</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+
+                <div id="backToLoginWrapper" class="hidden text-center pt-2">
+                    <button type="button" onclick="switchAuthMode('login')" class="text-xs font-medium text-slate-500 hover:text-slate-800 inline-flex items-center space-x-1">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                        <span>Quay lại đăng nhập</span>
+                    </button>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 text-center">
+                    <p class="text-[11px] text-slate-500 flex items-center justify-center gap-1.5">
+                        <i data-lucide="lock" class="w-3.5 h-3.5 text-teal-600"></i>
+                        <span>Bắt buộc đăng ký tài khoản để bảo vệ & lưu trữ dữ liệu vĩnh viễn</span>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== PIN LOCK OVERLAY ==================== -->
+    <div id="pinLockOverlay" class="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="max-w-xs w-full bg-white rounded-3xl p-7 text-center shadow-2xl">
+            <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="lock" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Màn hình đang khóa</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-5">Nhập mã PIN 4 số để mở khóa sổ nợ</p>
+            <input type="password" id="unlockPinInput" maxlength="4" inputmode="numeric" placeholder="••••" onkeyup="checkUnlockPin()" class="w-full text-center tracking-[0.75em] text-2xl font-bold py-3 bg-slate-100 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <p id="pinErrorMsg" class="text-xs text-rose-600 mt-2 hidden">Mã PIN không chính xác!</p>
+            <button type="button" onclick="logoutUser()" class="mt-5 text-xs text-slate-400 hover:text-rose-600 underline">Đăng xuất tài khoản</button>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN APPLICATION ==================== -->
+    <div id="mainApp" class="hidden flex-col min-h-screen">
+        <!-- Header Navigation -->
+        <header class="bg-slate-900 text-white sticky top-0 z-30 shadow-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+                <!-- Brand -->
+                <div class="flex items-center space-x-3">
+                    <div class="bg-gradient-to-tr from-teal-500 to-emerald-400 text-white p-2 rounded-xl shadow-sm">
+                        <i data-lucide="wallet" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h1 class="text-base sm:text-lg font-bold tracking-tight">Quản Lý Nợ Gia Đình</h1>
+                            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                                <span class="w-1.5 h-1.5 rounded-full bg-teal-400 mr-1 animate-pulse"></span> Đám mây
+                            </span>
+                        </div>
+                        <p id="userEmailDisplay" class="text-[11px] text-slate-400 truncate max-w-[160px] sm:max-w-xs">Đang đồng bộ...</p>
+                    </div>
+                </div>
+
+                <!-- Header Actions -->
+                <div class="flex items-center space-x-1.5 sm:space-x-2.5">
+                    <!-- Privacy Toggle (Hide Amounts) -->
+                    <button onclick="togglePrivacyMode()" id="privacyBtn" title="Ẩn/Hiện số tiền nhạy cảm" class="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition flex items-center space-x-1.5 text-xs font-medium border border-slate-700">
+                        <i id="privacyIcon" data-lucide="eye" class="w-4 h-4 text-teal-400"></i>
+                        <span class="hidden md:inline" id="privacyLabel">Ẩn số tiền</span>
+                    </button>
+
+                    <!-- PIN Lock Button -->
+                    <button onclick="handleQuickPinClick()" title="Khóa nhanh màn hình bằng mã PIN" class="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition flex items-center space-x-1.5 text-xs font-medium border border-slate-700">
+                        <i data-lucide="shield" class="w-4 h-4 text-amber-400"></i>
+                        <span class="hidden lg:inline">Khóa nhanh</span>
+                    </button>
+
+                    <!-- Export Dropdown / Button -->
+                    <div class="relative">
+                        <button onclick="toggleExportMenu()" title="Sao lưu dữ liệu" class="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition flex items-center space-x-1.5 text-xs font-medium border border-slate-700">
+                            <i data-lucide="download" class="w-4 h-4 text-sky-400"></i>
+                            <span class="hidden md:inline">Sao lưu</span>
+                        </button>
+                        <div id="exportMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-40 text-slate-700">
+                            <button onclick="exportData('csv')" class="w-full px-4 py-2 text-left text-xs font-medium hover:bg-slate-50 flex items-center space-x-2">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
+                                <span>Xuất file Excel (CSV)</span>
+                            </button>
+                            <button onclick="exportData('json')" class="w-full px-4 py-2 text-left text-xs font-medium hover:bg-slate-50 flex items-center space-x-2">
+                                <i data-lucide="file-json" class="w-4 h-4 text-amber-600"></i>
+                                <span>Xuất bản sao lưu JSON</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Add Debt Button -->
+                    <button onclick="openDebtModal()" class="inline-flex items-center space-x-1.5 bg-teal-600 hover:bg-teal-500 text-white px-3 sm:px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm transition shadow-sm">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Thêm khoản</span>
+                    </button>
+
+                    <!-- Logout -->
+                    <button onclick="logoutUser()" title="Đăng xuất" class="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition border border-rose-500/20">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Container -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-grow w-full space-y-6">
+
+            <!-- Alert Banner for Overdue / Upcoming Due Debts -->
+            <div id="dueAlertBanner" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-amber-100 text-amber-700 rounded-xl shrink-0">
+                        <i data-lucide="bell-ring" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-amber-900">Nhắc nhở thời hạn thanh toán</h4>
+                        <p id="dueAlertText" class="text-xs text-amber-700 mt-0.5"></p>
+                    </div>
+                </div>
+                <button onclick="setFilter('due-soon')" class="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl transition">
+                    Xem ngay
+                </button>
+            </div>
+
+            <!-- 4 Dashboard Summary Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                <!-- Card 1: Tổng Nợ Phải Trả -->
+                <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Tổng Nợ Phải Trả</span>
+                        <div class="p-2.5 bg-rose-50 text-rose-600 rounded-xl">
+                            <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h3 id="cardTotalOwed" class="text-2xl font-extrabold text-rose-600 tracking-tight">0 đ</h3>
+                        <p class="text-xs text-slate-500 mt-1 flex items-center">
+                            Còn lại của <span id="countOwed" class="font-semibold text-slate-700 mx-1">0</span> khoản đi vay
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Card 2: Tổng Cho Vay -->
+                <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Tổng Cho Vay</span>
+                        <div class="p-2.5 bg-teal-50 text-teal-600 rounded-xl">
+                            <i data-lucide="arrow-down-left" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h3 id="cardTotalLent" class="text-2xl font-extrabold text-teal-600 tracking-tight">0 đ</h3>
+                        <p class="text-xs text-slate-500 mt-1 flex items-center">
+                            Còn lại của <span id="countLent" class="font-semibold text-slate-700 mx-1">0</span> khoản phải thu
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Card 3: Số Dư Ròng -->
+                <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Số Dư Ròng</span>
+                        <div class="p-2.5 bg-slate-100 text-slate-700 rounded-xl">
+                            <i data-lucide="scale" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h3 id="cardNetBalance" class="text-2xl font-extrabold text-slate-900 tracking-tight">0 đ</h3>
+                        <p class="text-xs text-slate-500 mt-1">Cho vay trừ đi Nợ phải trả</p>
+                    </div>
+                </div>
+
+                <!-- Card 4: Khoản Sắp Đến Hạn / Chưa Tất Toán -->
+                <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Chưa Tất Toán</span>
+                        <div class="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
+                            <i data-lucide="clock" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h3 id="cardPendingCount" class="text-2xl font-extrabold text-slate-900 tracking-tight">0</h3>
+                        <p class="text-xs text-amber-600 font-medium mt-1">
+                            <span id="cardDueSoonCount">0</span> khoản quá hạn / sắp tới hạn
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800">Tỷ Lệ Nợ Phải Trả & Cho Vay</h3>
+                            <p class="text-xs text-slate-400">Tính trên tổng số dư chưa tất toán</p>
+                        </div>
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-slate-400"></i>
+                    </div>
+                    <div class="h-52 flex items-center justify-center">
+                        <canvas id="ratioChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800">Phân Bổ Theo Danh Mục</h3>
+                            <p class="text-xs text-slate-400">Tổng giá trị giao dịch theo nhóm</p>
+                        </div>
+                        <i data-lucide="bar-chart-3" class="w-4 h-4 text-slate-400"></i>
+                    </div>
+                    <div class="h-52 flex items-center justify-center">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters & Search Toolbar -->
+            <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex flex-col lg:flex-row gap-4 items-center justify-between">
+                <!-- Filter Pills -->
+                <div class="flex flex-wrap gap-1.5 w-full lg:w-auto">
+                    <button onclick="setFilter('all')" id="filter-all" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition bg-slate-900 text-white">Tất cả</button>
+                    <button onclick="setFilter('payable')" id="filter-payable" class="px-3.5 py-2 rounded-xl text-xs font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200">Tôi đi vay</button>
+                    <button onclick="setFilter('receivable')" id="filter-receivable" class="px-3.5 py-2 rounded-xl text-xs font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200">Tôi cho vay</button>
+                    <button onclick="setFilter('unpaid')" id="filter-unpaid" class="px-3.5 py-2 rounded-xl text-xs font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200">Chưa tất toán</button>
+                    <button onclick="setFilter('due-soon')" id="filter-due-soon" class="px-3.5 py-2 rounded-xl text-xs font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200">Sắp/Quá hạn</button>
+                    <button onclick="setFilter('paid')" id="filter-paid" class="px-3.5 py-2 rounded-xl text-xs font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200">Đã tất toán</button>
+                </div>
+
+                <!-- Search & Sort -->
+                <div class="flex items-center gap-2.5 w-full lg:w-auto">
+                    <div class="relative flex-grow lg:w-64">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </span>
+                        <input type="text" id="searchInput" oninput="renderDebts()" placeholder="Tìm tên người, ghi chú..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                    </div>
+                    <select id="sortSelect" onchange="renderDebts()" class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                        <option value="due-asc">Hạn trả gần nhất</option>
+                        <option value="due-desc">Hạn trả xa nhất</option>
+                        <option value="amount-desc">Số tiền giảm dần</option>
+                        <option value="amount-asc">Số tiền tăng dần</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Debt List Table -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+                                <th class="py-3.5 px-5">Người liên quan & Phân loại</th>
+                                <th class="py-3.5 px-4">Danh mục</th>
+                                <th class="py-3.5 px-4">Tiến độ thanh toán</th>
+                                <th class="py-3.5 px-4">Ngày vay / Hẹn trả</th>
+                                <th class="py-3.5 px-4">Trạng thái</th>
+                                <th class="py-3.5 px-5 text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="debtTableBody" class="divide-y divide-slate-100 text-sm">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="py-16 text-center">
+                    <div class="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p class="text-xs font-medium text-slate-500">Đang tải dữ liệu bảo mật từ đám mây...</p>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden py-16 text-center px-4">
+                    <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="folder-open" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-800">Chưa có khoản giao dịch nào</h3>
+                    <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Nhấn nút "Thêm khoản" ở góc trên để bắt đầu ghi chép và đồng bộ sổ nợ gia đình của bạn.</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t border-slate-200 mt-auto py-5 px-4 text-center text-xs text-slate-500">
+            <p>Quản Lý Nợ Gia Đình &copy; 2026 • Mã hóa & Đồng bộ đám mây thời gian thực</p>
+        </footer>
+    </div>
+
+    <!-- ==================== MODAL: ADD / EDIT DEBT ==================== -->
+    <div id="debtModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+                <h3 id="modalTitle" class="text-base font-bold text-slate-900">Thêm Khoản Giao Dịch Mới</h3>
+                <button type="button" onclick="closeDebtModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-200/60 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="debtForm" onsubmit="handleDebtSubmit(event)" class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                <input type="hidden" id="debtId">
+                
+                <!-- Type -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Phân loại giao dịch</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center justify-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:border-rose-400 has-checked:border-rose-600 has-checked:bg-rose-50/60 transition">
+                            <input type="radio" name="type" value="payable" checked class="text-rose-600 focus:ring-rose-500 mr-2">
+                            <span class="text-xs sm:text-sm font-semibold text-slate-700">Tôi đi vay (Nợ)</span>
+                        </label>
+                        <label class="flex items-center justify-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:border-teal-400 has-checked:border-teal-600 has-checked:bg-teal-50/60 transition">
+                            <input type="radio" name="type" value="receivable" class="text-teal-600 focus:ring-teal-500 mr-2">
+                            <span class="text-xs sm:text-sm font-semibold text-slate-700">Tôi cho vay</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Person Name -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Họ tên người liên quan <span class="text-rose-500">*</span></label>
+                    <input type="text" id="personName" required placeholder="VD: Anh Hai, Ngân hàng VIB, Chị Lan..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                </div>
+
+                <!-- Amount & Category -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Tổng số tiền (VNĐ) <span class="text-rose-500">*</span></label>
+                        <input type="text" id="amountFormatted" required inputmode="numeric" oninput="formatCurrencyInput(this)" placeholder="VD: 10,000,000" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Danh mục</label>
+                        <select id="category" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                            <option value="Sinh hoạt">Sinh hoạt</option>
+                            <option value="Y tế">Y tế</option>
+                            <option value="Học tập">Học tập</option>
+                            <option value="Kinh doanh">Kinh doanh</option>
+                            <option value="Mua sắm">Mua sắm</option>
+                            <option value="Khác">Khác</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Borrow Date & Due Date -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Ngày vay</label>
+                        <input type="date" id="borrowDate" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Ngày hẹn trả <span class="text-rose-500">*</span></label>
+                        <input type="date" id="dueDate" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Trạng thái</label>
+                    <select id="status" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                        <option value="pending">Chưa trả</option>
+                        <option value="partial">Trả một phần</option>
+                        <option value="paid">Đã tất toán</option>
+                    </select>
+                </div>
+
+                <!-- Notes -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Ghi chú chi tiết</label>
+                    <textarea id="notes" rows="2" placeholder="Lãi suất, số tài khoản nhận, lý do vay..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeDebtModal()" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-sm font-medium transition">Hủy</button>
+                    <button type="submit" id="saveDebtBtn" class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold transition shadow-sm">Lưu lên đám mây</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: PARTIAL PAYMENT & HISTORY ==================== -->
+    <div id="paymentModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 class="text-base font-bold text-slate-900">Ghi Nhận Thanh Toán / Trả Góp</h3>
+                <button type="button" onclick="closePaymentModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-200/60 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/70 space-y-1.5">
+                    <div class="flex justify-between text-xs text-slate-500">
+                        <span>Người liên quan:</span>
+                        <span id="payModalPerson" class="font-bold text-slate-800"></span>
+                    </div>
+                    <div class="flex justify-between text-xs text-slate-500">
+                        <span>Tổng khoản gốc:</span>
+                        <span id="payModalTotal" class="font-semibold text-slate-700"></span>
+                    </div>
+                    <div class="flex justify-between text-xs text-slate-500">
+                        <span>Đã thanh toán:</span>
+                        <span id="payModalPaid" class="font-semibold text-teal-600"></span>
+                    </div>
+                    <div class="flex justify-between text-sm font-bold pt-1.5 border-t border-slate-200">
+                        <span class="text-slate-700">Số dư còn lại:</span>
+                        <span id="payModalRemaining" class="text-rose-600"></span>
+                    </div>
+                </div>
+
+                <form id="paymentForm" onsubmit="handlePartialPayment(event)" class="space-y-3">
+                    <input type="hidden" id="payDebtId">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Số tiền trả lần này (VNĐ)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="payAmountInput" required inputmode="numeric" oninput="formatCurrencyInput(this)" placeholder="Nhập số tiền..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            <button type="button" onclick="fillFullRemaining()" class="shrink-0 px-3 py-2 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-xl text-xs font-semibold transition">Trả hết</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Ghi chú đợt trả</label>
+                        <input type="text" id="payNoteInput" placeholder="VD: Chuyển khoản đợt 1..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-semibold transition shadow-sm">
+                        Xác nhận thanh toán
+                    </button>
+                </form>
+
+                <!-- Payment History List -->
+                <div class="pt-3 border-t border-slate-100">
+                    <h4 class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Lịch sử các lần trả</h4>
+                    <div id="paymentHistoryList" class="max-h-36 overflow-y-auto custom-scrollbar space-y-2 text-xs">
+                        <!-- Dynamic history -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: SETUP PIN ==================== -->
+    <div id="pinSetupModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center">
+            <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="shield-alert" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-900">Bảo Vệ Màn Hình Bằng Mã PIN</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4">Thiết lập mã PIN 4 số để khóa nhanh ứng dụng khi rời khỏi máy tính/điện thoại.</p>
+            <input type="password" id="newPinInput" maxlength="4" inputmode="numeric" placeholder="Nhập 4 số PIN" class="w-full text-center tracking-[0.5em] text-xl font-bold py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 mb-4">
+            <div class="flex gap-2 justify-center">
+                <button type="button" onclick="closePinSetupModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50">Đóng</button>
+                <button type="button" id="removePinBtn" onclick="removeSessionPin()" class="hidden px-4 py-2 rounded-xl bg-rose-50 text-rose-600 text-xs font-semibold hover:bg-rose-100">Xóa PIN</button>
+                <button type="button" onclick="saveAndLockPin()" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800">Lưu & Khóa ngay</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: DELETE CONFIRMATION ==================== -->
+    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center">
+            <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="trash-2" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-900">Xác nhận xóa vĩnh viễn?</h3>
+            <p class="text-xs text-slate-500 mt-2">Dữ liệu khoản nợ này sẽ bị xóa khỏi đám mây và không thể khôi phục.</p>
+            <div class="flex items-center justify-center space-x-3 mt-6">
+                <button type="button" onclick="closeDeleteModal()" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold transition">Hủy bỏ</button>
+                <button type="button" id="confirmDeleteBtn" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition shadow-sm">Xóa ngay</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center space-x-3 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-700 max-w-sm">
+        <div id="toastIcon"></div>
+        <span id="toastMessage" class="text-xs sm:text-sm font-medium"></span>
+    </div>
+
+    <!-- ==================== FIREBASE & APPLICATION LOGIC ==================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            updateProfile,
+            sendPasswordResetEmail,
+            onAuthStateChanged,
+            signOut,
+            setPersistence,
+            browserLocalPersistence
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            doc, 
+            setDoc,
+            getDoc,
+            addDoc, 
+            updateDoc, 
+            deleteDoc, 
+            onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration from environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'family-debt-manager-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "demo-key",
+            authDomain: "demo.firebaseapp.com",
+            projectId: "demo-project"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Ensure persistent session across browser restarts
+        setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+        // Application State
+        let currentUser = null;
+        let unsubscribeDebts = null;
+        let debts = [];
+        let authMode = 'register'; // Default to 'register' so users must register before use
+        let currentFilter = 'all';
+        let isPrivacyMode = false;
+        let userPin = null;
+        let idleTimer = null;
+        let ratioChartInstance = null;
+        let categoryChartInstance = null;
+
+        // Listen to Authentication State Changes (Strict Auth Gate: no anonymous fallback)
+        onAuthStateChanged(auth, async (user) => {
+            if (user && !user.isAnonymous) {
+                currentUser = user;
+                // User is logged in -> Show App & Subscribe to isolated Firestore path
+                document.getElementById('authScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('mainApp').classList.add('flex');
+                
+                const greeting = user.displayName ? `${user.displayName} • ${user.email}` : user.email;
+                document.getElementById('userEmailDisplay').innerText = greeting;
+
+                // Load user profile & PIN from Firestore
+                await loadUserProfile(user.uid);
+                subscribeToUserDebts(user.uid);
+                resetIdleTimer();
+            } else {
+                // If an anonymous session existed from earlier, sign it out to enforce registration
+                if (user && user.isAnonymous) {
+                    await signOut(auth).catch(() => {});
+                }
+                currentUser = null;
+                userPin = null;
+                clearTimeout(idleTimer);
+                if (unsubscribeDebts) {
+                    unsubscribeDebts();
+                    unsubscribeDebts = null;
+                }
+                debts = [];
+                document.getElementById('mainApp').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('flex');
+                document.getElementById('pinLockOverlay').classList.add('hidden');
+                document.getElementById('authScreen').classList.remove('hidden');
+            }
+            lucide.createIcons();
+        });
+
+        // Load User Profile (Strict Rule 1: /artifacts/{appId}/users/{userId}/profile/info)
+        async function loadUserProfile(userId) {
+            try {
+                const profileRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'info');
+                const snap = await getDoc(profileRef);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if (data.displayName) {
+                        document.getElementById('userEmailDisplay').innerText = `${data.displayName} • ${currentUser.email}`;
+                    }
+                    if (data.quickPin && /^\d{4}$/.test(data.quickPin)) {
+                        userPin = data.quickPin;
+                    }
+                }
+            } catch (err) {
+                console.warn("Could not load user profile:", err);
+            }
+        }
+
+        // Auto-lock screen after 5 minutes of inactivity if PIN is configured
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            if (currentUser && userPin) {
+                idleTimer = setTimeout(() => {
+                    document.getElementById('unlockPinInput').value = '';
+                    document.getElementById('pinErrorMsg').classList.add('hidden');
+                    document.getElementById('pinLockOverlay').classList.remove('hidden');
+                }, 5 * 60 * 1000);
+            }
+        }
+        ['mousemove', 'keydown', 'click', 'touchstart'].forEach(evt => {
+            document.addEventListener(evt, resetIdleTimer, { passive: true });
+        });
+
+        // Subscribe to Realtime Firestore Collection (Strict Rule 1: /artifacts/{appId}/users/{userId}/debts)
+        function subscribeToUserDebts(userId) {
+            if (!userId) return;
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('emptyState').classList.add('hidden');
+
+            const debtsColRef = collection(db, 'artifacts', appId, 'users', userId, 'debts');
+            unsubscribeDebts = onSnapshot(debtsColRef, (snapshot) => {
+                debts = snapshot.docs.map(docSnap => ({
+                    id: docSnap.id,
+                    ...docSnap.data()
+                }));
+                document.getElementById('loadingState').classList.add('hidden');
+                refreshUI();
+            }, (error) => {
+                console.error("Firestore sync error:", error);
+                document.getElementById('loadingState').classList.add('hidden');
+                showToast("Lỗi đồng bộ dữ liệu đám mây. Vui lòng thử lại!", "error");
+            });
+        }
+
+        // ==================== AUTHENTICATION HANDLERS ====================
+        window.switchAuthMode = function(mode) {
+            authMode = mode;
+            const tabLogin = document.getElementById('tabLogin');
+            const tabRegister = document.getElementById('tabRegister');
+            const fullNameGroup = document.getElementById('fullNameGroup');
+            const passwordGroup = document.getElementById('passwordFieldGroup');
+            const confirmGroup = document.getElementById('confirmPasswordGroup');
+            const registerPinGroup = document.getElementById('registerPinGroup');
+            const strengthWrapper = document.getElementById('strengthWrapper');
+            const forgotLink = document.getElementById('forgotPassLink');
+            const submitText = document.getElementById('authSubmitText');
+            const backWrapper = document.getElementById('backToLoginWrapper');
+            const authTabs = document.getElementById('authTabs');
+
+            hideAuthAlerts();
+
+            if (mode === 'login') {
+                authTabs.classList.remove('hidden');
+                tabLogin.className = "py-3.5 text-sm font-semibold text-teal-700 border-b-2 border-teal-600 bg-white transition";
+                tabRegister.className = "py-3.5 text-sm font-medium text-slate-500 hover:text-slate-700 transition";
+                fullNameGroup.classList.add('hidden');
+                document.getElementById('authFullName').required = false;
+                passwordGroup.classList.remove('hidden');
+                document.getElementById('authPassword').required = true;
+                confirmGroup.classList.add('hidden');
+                document.getElementById('authConfirmPassword').required = false;
+                registerPinGroup.classList.add('hidden');
+                strengthWrapper.classList.add('hidden');
+                forgotLink.classList.remove('hidden');
+                backWrapper.classList.add('hidden');
+                submitText.innerText = "Đăng nhập vào sổ nợ";
+            } else if (mode === 'register') {
+                authTabs.classList.remove('hidden');
+                tabRegister.className = "py-3.5 text-sm font-semibold text-teal-700 border-b-2 border-teal-600 bg-white transition";
+                tabLogin.className = "py-3.5 text-sm font-medium text-slate-500 hover:text-slate-700 transition";
+                fullNameGroup.classList.remove('hidden');
+                document.getElementById('authFullName').required = true;
+                passwordGroup.classList.remove('hidden');
+                document.getElementById('authPassword').required = true;
+                confirmGroup.classList.remove('hidden');
+                document.getElementById('authConfirmPassword').required = true;
+                registerPinGroup.classList.remove('hidden');
+                strengthWrapper.classList.remove('hidden');
+                forgotLink.classList.add('hidden');
+                backWrapper.classList.add('hidden');
+                submitText.innerText = "Tạo tài khoản & Bắt đầu sử dụng";
+            } else if (mode === 'reset') {
+                authTabs.classList.add('hidden');
+                fullNameGroup.classList.add('hidden');
+                document.getElementById('authFullName').required = false;
+                passwordGroup.classList.add('hidden');
+                document.getElementById('authPassword').required = false;
+                confirmGroup.classList.add('hidden');
+                document.getElementById('authConfirmPassword').required = false;
+                registerPinGroup.classList.add('hidden');
+                backWrapper.classList.remove('hidden');
+                submitText.innerText = "Gửi email khôi phục mật khẩu";
+            }
+        };
+
+        window.handleAuthSubmit = async function(e) {
+            e.preventDefault();
+            hideAuthAlerts();
+
+            const fullName = document.getElementById('authFullName').value.trim();
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value;
+            const confirmPassword = document.getElementById('authConfirmPassword').value;
+            const registerPin = document.getElementById('authRegisterPin').value.trim();
+            const btn = document.getElementById('authSubmitBtn');
+            btn.disabled = true;
+
+            try {
+                if (authMode === 'login') {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    showToast("Đăng nhập thành công!", "success");
+                } else if (authMode === 'register') {
+                    if (!fullName) {
+                        throw { code: 'missing-name-custom', message: 'Vui lòng nhập họ và tên hoặc tên hiển thị của bạn.' };
+                    }
+                    if (password.length < 6) {
+                        throw { code: 'weak-password-custom', message: 'Mật khẩu phải có ít nhất 6 ký tự để đảm bảo an toàn.' };
+                    }
+                    if (password !== confirmPassword) {
+                        throw { code: 'mismatch-custom', message: 'Mật khẩu xác nhận không khớp. Vui lòng kiểm tra lại.' };
+                    }
+                    if (registerPin && !/^\d{4}$/.test(registerPin)) {
+                        throw { code: 'pin-custom', message: 'Mã PIN khóa nhanh phải gồm đúng 4 chữ số (hoặc để trống).' };
+                    }
+
+                    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                    await updateProfile(userCred.user, { displayName: fullName });
+
+                    // Create private user profile document in Firestore (Strict Rule 1)
+                    const profileRef = doc(db, 'artifacts', appId, 'users', userCred.user.uid, 'profile', 'info');
+                    await setDoc(profileRef, {
+                        uid: userCred.user.uid,
+                        displayName: fullName,
+                        email: email,
+                        quickPin: registerPin || null,
+                        createdAt: new Date().toISOString()
+                    });
+
+                    if (registerPin) {
+                        userPin = registerPin;
+                    }
+                    showToast(`Chào mừng ${fullName}! Tài khoản đã được tạo và bảo vệ.`, "success");
+                } else if (authMode === 'reset') {
+                    await sendPasswordResetEmail(auth, email);
+                    showAuthSuccess("Đã gửi liên kết đặt lại mật khẩu tới email của bạn. Vui lòng kiểm tra hộp thư!");
+                }
+            } catch (err) {
+                showAuthError(mapFirebaseAuthError(err));
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        window.logoutUser = async function() {
+            try {
+                userPin = null;
+                clearTimeout(idleTimer);
+                await signOut(auth);
+                switchAuthMode('login');
+                showToast("Đã đăng xuất an toàn.", "success");
+            } catch (err) {
+                showToast("Lỗi khi đăng xuất.", "error");
+            }
+        };
+
+        function mapFirebaseAuthError(err) {
+            const code = err.code || '';
+            if (code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
+                return 'Email hoặc mật khẩu không chính xác.';
+            }
+            if (code === 'auth/email-already-in-use') {
+                return 'Email này đã được đăng ký. Vui lòng chuyển sang tab Đăng nhập.';
+            }
+            if (code === 'auth/weak-password') {
+                return 'Mật khẩu quá yếu. Vui lòng dùng ít nhất 6 ký tự.';
+            }
+            if (code === 'auth/invalid-email') {
+                return 'Định dạng địa chỉ Email không hợp lệ.';
+            }
+            if (code === 'auth/too-many-requests') {
+                return 'Thử lại quá nhiều lần. Vui lòng đợi ít phút.';
+            }
+            return err.message || 'Đã xảy ra lỗi xác thực.';
+        }
+
+        function showAuthError(msg) {
+            const box = document.getElementById('authErrorBox');
+            document.getElementById('authErrorText').innerText = msg;
+            box.classList.remove('hidden');
+        }
+
+        function showAuthSuccess(msg) {
+            const box = document.getElementById('authSuccessBox');
+            document.getElementById('authSuccessText').innerText = msg;
+            box.classList.remove('hidden');
+        }
+
+        function hideAuthAlerts() {
+            document.getElementById('authErrorBox').classList.add('hidden');
+            document.getElementById('authSuccessBox').classList.add('hidden');
+        }
+
+        window.togglePasswordVisibility = function(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                input.type = 'password';
+                icon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        };
+
+        window.checkPasswordStrength = function() {
+            if (authMode !== 'register') return;
+            const val = document.getElementById('authPassword').value;
+            let score = 0;
+            if (val.length >= 6) score++;
+            if (val.length >= 8 && /[A-Z]/.test(val)) score++;
+            if (/[0-9]/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
+
+            const colors = ['bg-rose-500', 'bg-amber-500', 'bg-teal-500', 'bg-emerald-500'];
+            const labels = ['Rất yếu', 'Trung bình', 'Khá mạnh', 'Rất an toàn'];
+
+            for (let i = 1; i <= 4; i++) {
+                const bar = document.getElementById(`strBar${i}`);
+                bar.className = `flex-1 rounded-full transition-colors ${i <= score ? colors[score - 1] : 'bg-slate-200'}`;
+            }
+            document.getElementById('strengthText').innerText = val.length === 0 
+                ? 'Độ mạnh: Tối thiểu 6 ký tự' 
+                : `Độ mạnh mật khẩu: ${labels[Math.max(0, score - 1)]}`;
+        };
+
+        // ==================== PRIVACY & PIN SECURITY ====================
+        window.togglePrivacyMode = function() {
+            isPrivacyMode = !isPrivacyMode;
+            const icon = document.getElementById('privacyIcon');
+            const label = document.getElementById('privacyLabel');
+            if (isPrivacyMode) {
+                icon.setAttribute('data-lucide', 'eye-off');
+                label.innerText = 'Hiện số tiền';
+            } else {
+                icon.setAttribute('data-lucide', 'eye');
+                label.innerText = 'Ẩn số tiền';
+            }
+            lucide.createIcons();
+            refreshUI();
+        };
+
+        window.handleQuickPinClick = function() {
+            if (userPin) {
+                // Lock immediately if PIN is already set
+                document.getElementById('unlockPinInput').value = '';
+                document.getElementById('pinErrorMsg').classList.add('hidden');
+                document.getElementById('pinLockOverlay').classList.remove('hidden');
+            } else {
+                openPinSetupModal();
+            }
+        };
+
+        window.openPinSetupModal = function() {
+            document.getElementById('newPinInput').value = '';
+            const removeBtn = document.getElementById('removePinBtn');
+            if (userPin) {
+                removeBtn.classList.remove('hidden');
+            } else {
+                removeBtn.classList.add('hidden');
+            }
+            document.getElementById('pinSetupModal').classList.remove('hidden');
+        };
+
+        window.closePinSetupModal = function() {
+            document.getElementById('pinSetupModal').classList.add('hidden');
+        };
+
+        window.saveAndLockPin = async function() {
+            const pin = document.getElementById('newPinInput').value.trim();
+            if (!/^\d{4}$/.test(pin)) {
+                showToast("Vui lòng nhập đúng 4 chữ số PIN!", "error");
+                return;
+            }
+            userPin = pin;
+            if (currentUser) {
+                const profileRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'info');
+                await setDoc(profileRef, { quickPin: pin }, { merge: true }).catch(() => {});
+            }
+            closePinSetupModal();
+            document.getElementById('unlockPinInput').value = '';
+            document.getElementById('pinErrorMsg').classList.add('hidden');
+            document.getElementById('pinLockOverlay').classList.remove('hidden');
+            resetIdleTimer();
+        };
+
+        window.removeSessionPin = async function() {
+            userPin = null;
+            clearTimeout(idleTimer);
+            if (currentUser) {
+                const profileRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'info');
+                await setDoc(profileRef, { quickPin: null }, { merge: true }).catch(() => {});
+            }
+            closePinSetupModal();
+            showToast("Đã gỡ bỏ mã PIN khóa màn hình.", "success");
+        };
+
+        window.checkUnlockPin = function() {
+            const val = document.getElementById('unlockPinInput').value;
+            if (val.length === 4) {
+                if (val === userPin) {
+                    document.getElementById('pinLockOverlay').classList.add('hidden');
+                    document.getElementById('unlockPinInput').value = '';
+                    document.getElementById('pinErrorMsg').classList.add('hidden');
+                    resetIdleTimer();
+                } else {
+                    document.getElementById('pinErrorMsg').classList.remove('hidden');
+                    document.getElementById('unlockPinInput').value = '';
+                }
+            }
+        };
+
+        // ==================== DASHBOARD, CHARTS & RENDERING ====================
+        function refreshUI() {
+            renderDashboardStats();
+            renderCharts();
+            renderDebts();
+            lucide.createIcons();
+        }
+
+        function getRemainingAmount(debt) {
+            const total = Number(debt.amount) || 0;
+            const paid = Number(debt.paidAmount) || 0;
+            if (debt.status === 'paid') return 0;
+            return Math.max(0, total - paid);
+        }
+
+        function isDueSoonOrOverdue(debt) {
+            if (debt.status === 'paid' || !debt.dueDate) return false;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const due = new Date(debt.dueDate);
+            due.setHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+            return diffDays <= 3; // Overdue (<0) or within 3 days (0..3)
+        }
+
+        function renderDashboardStats() {
+            let activeOwed = 0;
+            let countOwed = 0;
+            let activeLent = 0;
+            let countLent = 0;
+            let unpaidCount = 0;
+            let dueSoonCount = 0;
+
+            debts.forEach(d => {
+                const rem = getRemainingAmount(d);
+                if (d.status !== 'paid') {
+                    unpaidCount++;
+                    if (isDueSoonOrOverdue(d)) dueSoonCount++;
+                    if (d.type === 'payable') {
+                        activeOwed += rem;
+                        countOwed++;
+                    } else {
+                        activeLent += rem;
+                        countLent++;
+                    }
+                }
+            });
+
+            const netBalance = activeLent - activeOwed;
+
+            document.getElementById('cardTotalOwed').innerText = formatMoneyDisplay(activeOwed);
+            document.getElementById('countOwed').innerText = countOwed;
+
+            document.getElementById('cardTotalLent').innerText = formatMoneyDisplay(activeLent);
+            document.getElementById('countLent').innerText = countLent;
+
+            const netEl = document.getElementById('cardNetBalance');
+            netEl.innerText = formatMoneyDisplay(netBalance);
+            netEl.className = `text-2xl font-extrabold tracking-tight ${netBalance >= 0 ? 'text-teal-600' : 'text-rose-600'}`;
+
+            document.getElementById('cardPendingCount').innerText = unpaidCount;
+            document.getElementById('cardDueSoonCount').innerText = dueSoonCount;
+
+            // Alert banner
+            const banner = document.getElementById('dueAlertBanner');
+            if (dueSoonCount > 0) {
+                banner.classList.remove('hidden');
+                document.getElementById('dueAlertText').innerText = `Bạn có ${dueSoonCount} khoản giao dịch đã quá hạn hoặc sắp đến hạn trong vòng 3 ngày tới.`;
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        function renderCharts() {
+            // 1. Ratio Doughnut Chart
+            let owedTotal = 0;
+            let lentTotal = 0;
+            const catMap = {};
+
+            debts.forEach(d => {
+                const rem = getRemainingAmount(d);
+                if (d.status !== 'paid') {
+                    if (d.type === 'payable') owedTotal += rem;
+                    else lentTotal += rem;
+                }
+                const cat = d.category || 'Khác';
+                catMap[cat] = (catMap[cat] || 0) + (Number(d.amount) || 0);
+            });
+
+            const ctxRatio = document.getElementById('ratioChart').getContext('2d');
+            if (ratioChartInstance) ratioChartInstance.destroy();
+            ratioChartInstance = new Chart(ctxRatio, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Nợ phải trả', 'Cho vay (Phải thu)'],
+                    datasets: [{
+                        data: (owedTotal === 0 && lentTotal === 0) ? [1, 1] : [owedTotal, lentTotal],
+                        backgroundColor: (owedTotal === 0 && lentTotal === 0) ? ['#e2e8f0', '#cbd5e1'] : ['#e11d48', '#0d9488'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 12 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    if (owedTotal === 0 && lentTotal === 0) return ' Chưa có dữ liệu';
+                                    return ` ${ctx.label}: ${formatMoneyDisplay(ctx.raw)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. Category Bar Chart
+            const catLabels = Object.keys(catMap);
+            const catValues = Object.values(catMap);
+            const ctxCat = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChartInstance) categoryChartInstance.destroy();
+            categoryChartInstance = new Chart(ctxCat, {
+                type: 'bar',
+                data: {
+                    labels: catLabels.length ? catLabels : ['Chưa có dữ liệu'],
+                    datasets: [{
+                        label: 'Tổng giá trị',
+                        data: catValues.length ? catValues : [0],
+                        backgroundColor: '#0f172a',
+                        borderRadius: 8,
+                        barThickness: 26
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` Tổng: ${formatMoneyDisplay(ctx.raw)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                font: { size: 11 },
+                                callback: (v) => isPrivacyMode ? '***' : (v >= 1000000 ? (v / 1000000) + 'tr' : v)
+                            },
+                            grid: { color: '#f1f5f9' }
+                        },
+                        x: {
+                            ticks: { font: { size: 11 } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        window.setFilter = function(filter) {
+            currentFilter = filter;
+            ['all', 'payable', 'receivable', 'unpaid', 'due-soon', 'paid'].forEach(f => {
+                const btn = document.getElementById(`filter-${f}`);
+                if (!btn) return;
+                if (f === filter) {
+                    btn.className = 'px-3.5 py-2 rounded-xl text-xs font-semibold transition bg-slate-900 text-white';
+                } else {
+                    btn.className = 'px-3.5 py-2 rounded-xl text-xs font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200';
+                }
+            });
+            renderDebts();
+        };
+
+        window.renderDebts = function() {
+            const tbody = document.getElementById('debtTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const sortBy = document.getElementById('sortSelect').value;
+
+            tbody.innerHTML = '';
+
+            let filtered = debts.filter(d => {
+                const matchText = (d.person || '').toLowerCase().includes(query) || 
+                                  (d.notes || '').toLowerCase().includes(query) ||
+                                  (d.category || '').toLowerCase().includes(query);
+                if (!matchText) return false;
+
+                if (currentFilter === 'payable') return d.type === 'payable';
+                if (currentFilter === 'receivable') return d.type === 'receivable';
+                if (currentFilter === 'unpaid') return d.status !== 'paid';
+                if (currentFilter === 'paid') return d.status === 'paid';
+                if (currentFilter === 'due-soon') return isDueSoonOrOverdue(d);
+                return true;
+            });
+
+            filtered.sort((a, b) => {
+                if (sortBy === 'due-asc') return new Date(a.dueDate || '9999-12-31') - new Date(b.dueDate || '9999-12-31');
+                if (sortBy === 'due-desc') return new Date(b.dueDate || '1970-01-01') - new Date(a.dueDate || '1970-01-01');
+                if (sortBy === 'amount-desc') return getRemainingAmount(b) - getRemainingAmount(a);
+                if (sortBy === 'amount-asc') return getRemainingAmount(a) - getRemainingAmount(b);
+                return 0;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            filtered.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/90 transition group';
+
+                const isPayable = d.type === 'payable';
+                const total = Number(d.amount) || 0;
+                const paid = d.status === 'paid' ? total : (Number(d.paidAmount) || 0);
+                const remaining = getRemainingAmount(d);
+                const percent = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+
+                // Due date status badge
+                let dueWarning = '';
+                if (d.status !== 'paid' && d.dueDate) {
+                    const due = new Date(d.dueDate);
+                    due.setHours(0, 0, 0, 0);
+                    const diff = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+                    if (diff < 0) {
+                        dueWarning = `<span class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700">Quá hạn ${Math.abs(diff)} ngày</span>`;
+                    } else if (diff <= 3) {
+                        dueWarning = `<span class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800">${diff === 0 ? 'Hết hạn hôm nay' : `Còn ${diff} ngày`}</span>`;
+                    }
+                }
+
+                const typeTag = isPayable
+                    ? `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-100">Tôi đi vay</span>`
+                    : `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-100">Tôi cho vay</span>`;
+
+                let statusBadge = '';
+                if (d.status === 'paid') {
+                    statusBadge = `<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-800">Đã tất toán</span>`;
+                } else if (d.status === 'partial' || paid > 0) {
+                    statusBadge = `<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-sky-100 text-sky-800">Trả một phần</span>`;
+                } else {
+                    statusBadge = `<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-800">Chưa trả</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="py-4 px-5">
+                        <div class="font-bold text-slate-900">${escapeHTML(d.person)}</div>
+                        <div class="text-xs text-slate-500 mt-0.5 line-clamp-1">${d.notes ? escapeHTML(d.notes) : 'Không có ghi chú'}</div>
+                        <div class="mt-1.5">${typeTag}</div>
+                    </td>
+                    <td class="py-4 px-4">
+                        <span class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">${escapeHTML(d.category || 'Khác')}</span>
+                    </td>
+                    <td class="py-4 px-4 min-w-[180px]">
+                        <div class="font-extrabold ${isPayable ? 'text-rose-600' : 'text-teal-600'}">
+                            ${formatMoneyDisplay(remaining)}
+                        </div>
+                        <div class="text-[11px] text-slate-400 mt-0.5">
+                            Gốc: ${formatMoneyDisplay(total)} (${percent}%)
+                        </div>
+                        <div class="w-full bg-slate-100 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                            <div class="h-full ${isPayable ? 'bg-rose-500' : 'bg-teal-500'} rounded-full transition-all" style="width: ${percent}%"></div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4 text-xs text-slate-600">
+                        <div>Vay: <span class="font-medium">${formatDateVN(d.borrowDate)}</span></div>
+                        <div class="mt-0.5">Hẹn: <span class="font-semibold text-slate-800">${formatDateVN(d.dueDate)}</span></div>
+                        ${dueWarning}
+                    </td>
+                    <td class="py-4 px-4">
+                        ${statusBadge}
+                    </td>
+                    <td class="py-4 px-5 text-right whitespace-nowrap space-x-1">
+                        <button onclick="openPaymentModal('${d.id}')" title="Trả góp / Lịch sử trả" class="p-2 text-teal-600 hover:bg-teal-50 rounded-xl transition">
+                            <i data-lucide="banknote" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="openDebtModal('${d.id}')" title="Chỉnh sửa" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition">
+                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="confirmDelete('${d.id}')" title="Xóa" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        };
+
+        // ==================== CRUD OPERATIONS WITH FIRESTORE ====================
+        window.openDebtModal = function(id = null) {
+            const form = document.getElementById('debtForm');
+            form.reset();
+            document.getElementById('debtId').value = '';
+
+            if (id) {
+                document.getElementById('modalTitle').innerText = 'Chỉnh Sửa Khoản Giao Dịch';
+                const d = debts.find(item => item.id === id);
+                if (d) {
+                    document.getElementById('debtId').value = d.id;
+                    document.querySelector(`input[name="type"][value="${d.type}"]`).checked = true;
+                    document.getElementById('personName').value = d.person;
+                    document.getElementById('amountFormatted').value = Number(d.amount).toLocaleString('en-US');
+                    document.getElementById('category').value = d.category || 'Người thân';
+                    document.getElementById('borrowDate').value = d.borrowDate || new Date().toISOString().split('T')[0];
+                    document.getElementById('dueDate').value = d.dueDate;
+                    document.getElementById('status').value = d.status;
+                    document.getElementById('notes').value = d.notes || '';
+                }
+            } else {
+                document.getElementById('modalTitle').innerText = 'Thêm Khoản Giao Dịch Mới';
+                const today = new Date();
+                const nextMonth = new Date();
+                nextMonth.setDate(today.getDate() + 30);
+                document.getElementById('borrowDate').value = today.toISOString().split('T')[0];
+                document.getElementById('dueDate').value = nextMonth.toISOString().split('T')[0];
+            }
+            document.getElementById('debtModal').classList.remove('hidden');
+        };
+
+        window.closeDebtModal = function() {
+            document.getElementById('debtModal').classList.add('hidden');
+        };
+
+        window.handleDebtSubmit = async function(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const id = document.getElementById('debtId').value;
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const person = document.getElementById('personName').value.trim();
+            const rawAmount = parseCurrencyString(document.getElementById('amountFormatted').value);
+            const category = document.getElementById('category').value;
+            const borrowDate = document.getElementById('borrowDate').value;
+            const dueDate = document.getElementById('dueDate').value;
+            const status = document.getElementById('status').value;
+            const notes = document.getElementById('notes').value.trim();
+
+            if (rawAmount <= 0) {
+                showToast("Vui lòng nhập số tiền lớn hơn 0!", "error");
+                return;
+            }
+
+            const btn = document.getElementById('saveDebtBtn');
+            btn.disabled = true;
+
+            try {
+                if (id) {
+                    const existing = debts.find(item => item.id === id);
+                    const paidAmount = status === 'paid' ? rawAmount : (existing?.paidAmount || 0);
+                    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'debts', id);
+                    await updateDoc(docRef, {
+                        type, person, amount: rawAmount, paidAmount, category, borrowDate, dueDate, status, notes,
+                        updatedAt: new Date().toISOString()
+                    });
+                    showToast("Đã cập nhật dữ liệu lên đám mây!", "success");
+                } else {
+                    const colRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'debts');
+                    await addDoc(colRef, {
+                        type,
+                        person,
+                        amount: rawAmount,
+                        paidAmount: status === 'paid' ? rawAmount : 0,
+                        category,
+                        borrowDate,
+                        dueDate,
+                        status,
+                        notes,
+                        payments: [],
+                        createdAt: new Date().toISOString()
+                    });
+                    showToast("Đã lưu khoản mới lên đám mây!", "success");
+                }
+                closeDebtModal();
+            } catch (err) {
+                console.error(err);
+                showToast("Lỗi khi lưu dữ liệu: " + err.message, "error");
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        // ==================== PARTIAL PAYMENT / INSTALLMENT ====================
+        window.openPaymentModal = function(id) {
+            const d = debts.find(item => item.id === id);
+            if (!d) return;
+
+            const total = Number(d.amount) || 0;
+            const paid = d.status === 'paid' ? total : (Number(d.paidAmount) || 0);
+            const rem = Math.max(0, total - paid);
+
+            document.getElementById('payDebtId').value = d.id;
+            document.getElementById('payModalPerson').innerText = d.person;
+            document.getElementById('payModalTotal').innerText = formatMoneyDisplay(total);
+            document.getElementById('payModalPaid').innerText = formatMoneyDisplay(paid);
+            document.getElementById('payModalRemaining').innerText = formatMoneyDisplay(rem);
+            document.getElementById('payAmountInput').value = '';
+            document.getElementById('payNoteInput').value = '';
+
+            // Render payment history
+            const listEl = document.getElementById('paymentHistoryList');
+            const history = d.payments || [];
+            if (history.length === 0) {
+                listEl.innerHTML = `<p class="text-slate-400 italic py-2">Chưa có lịch sử trả góp nào.</p>`;
+            } else {
+                listEl.innerHTML = history.map(p => `
+                    <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <div>
+                            <div class="font-bold text-teal-700">${formatMoneyDisplay(p.amount)}</div>
+                            ${p.note ? `<div class="text-slate-500 mt-0.5">${escapeHTML(p.note)}</div>` : ''}
+                        </div>
+                        <span class="text-[11px] text-slate-400">${formatDateVN(p.date)}</span>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('paymentModal').classList.remove('hidden');
+        };
+
+        window.closePaymentModal = function() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        };
+
+        window.fillFullRemaining = function() {
+            const id = document.getElementById('payDebtId').value;
+            const d = debts.find(item => item.id === id);
+            if (!d) return;
+            const rem = getRemainingAmount(d);
+            document.getElementById('payAmountInput').value = rem.toLocaleString('en-US');
+        };
+
+        window.handlePartialPayment = async function(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const id = document.getElementById('payDebtId').value;
+            const d = debts.find(item => item.id === id);
+            if (!d) return;
+
+            const payVal = parseCurrencyString(document.getElementById('payAmountInput').value);
+            const noteVal = document.getElementById('payNoteInput').value.trim();
+
+            if (payVal <= 0) {
+                showToast("Số tiền thanh toán phải lớn hơn 0!", "error");
+                return;
+            }
+
+            const total = Number(d.amount) || 0;
+            const currentPaid = Number(d.paidAmount) || 0;
+            const newPaid = Math.min(total, currentPaid + payVal);
+            const newStatus = newPaid >= total ? 'paid' : 'partial';
+            const updatedPayments = [
+                ...(d.payments || []),
+                {
+                    amount: payVal,
+                    note: noteVal,
+                    date: new Date().toISOString().split('T')[0]
+                }
+            ];
+
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'debts', id);
+                await updateDoc(docRef, {
+                    paidAmount: newPaid,
+                    status: newStatus,
+                    payments: updatedPayments
+                });
+                closePaymentModal();
+                showToast(newStatus === 'paid' ? "Chúc mừng! Khoản giao dịch đã được tất toán!" : "Đã ghi nhận thanh toán một phần!", "success");
+            } catch (err) {
+                showToast("Lỗi cập nhật thanh toán: " + err.message, "error");
+            }
+        };
+
+        // ==================== DELETE OPERATION ====================
+        window.confirmDelete = function(id) {
+            document.getElementById('deleteModal').classList.remove('hidden');
+            document.getElementById('confirmDeleteBtn').onclick = async () => {
+                if (!currentUser) return;
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'debts', id);
+                    await deleteDoc(docRef);
+                    closeDeleteModal();
+                    showToast("Đã xóa khoản giao dịch khỏi đám mây.", "success");
+                } catch (err) {
+                    showToast("Lỗi khi xóa dữ liệu: " + err.message, "error");
+                }
+            };
+        };
+
+        window.closeDeleteModal = function() {
+            document.getElementById('deleteModal').classList.add('hidden');
+        };
+
+        // ==================== EXPORT BACKUP (CSV & JSON) ====================
+        window.toggleExportMenu = function() {
+            document.getElementById('exportMenu').classList.toggle('hidden');
+        };
+
+        window.exportData = function(format) {
+            document.getElementById('exportMenu').classList.add('hidden');
+            if (debts.length === 0) {
+                showToast("Chưa có dữ liệu để xuất sao lưu!", "error");
+                return;
+            }
+
+            const dateStamp = new Date().toISOString().split('T')[0];
+            if (format === 'json') {
+                const blob = new Blob([JSON.stringify(debts, null, 2)], { type: 'application/json' });
+                triggerDownload(blob, `SoNoGiaDinh_Backup_${dateStamp}.json`);
+            } else if (format === 'csv') {
+                const headers = ['Phân loại', 'Người liên quan', 'Danh mục', 'Tổng gốc (VNĐ)', 'Đã trả (VNĐ)', 'Còn lại (VNĐ)', 'Ngày vay', 'Ngày hẹn trả', 'Trạng thái', 'Ghi chú'];
+                const rows = debts.map(d => [
+                    d.type === 'payable' ? 'Tôi đi vay' : 'Tôi cho vay',
+                    `"${(d.person || '').replace(/"/g, '""')}"`,
+                    `"${(d.category || '').replace(/"/g, '""')}"`,
+                    d.amount || 0,
+                    d.status === 'paid' ? d.amount : (d.paidAmount || 0),
+                    getRemainingAmount(d),
+                    d.borrowDate || '',
+                    d.dueDate || '',
+                    d.status === 'paid' ? 'Đã tất toán' : (d.status === 'partial' ? 'Trả một phần' : 'Chưa trả'),
+                    `"${(d.notes || '').replace(/"/g, '""')}"`
+                ]);
+                const csvContent = "\uFEFF" + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                triggerDownload(blob, `SoNoGiaDinh_${dateStamp}.csv`);
+            }
+            showToast(`Đã tải xuống bản sao lưu ${format.toUpperCase()}!`, "success");
+        };
+
+        function triggerDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ==================== FORMATTING & HELPER UTILITIES ====================
+        window.formatCurrencyInput = function(input) {
+            const digits = input.value.replace(/\D/g, '');
+            input.value = digits ? Number(digits).toLocaleString('en-US') : '';
+        };
+
+        function parseCurrencyString(str) {
+            return Number(String(str).replace(/\D/g, '')) || 0;
+        }
+
+        function formatMoneyDisplay(amount) {
+            if (isPrivacyMode) return '*** đ';
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        }
+
+        function formatDateVN(dateStr) {
+            if (!dateStr) return '--/--/----';
+            const parts = dateStr.split('-');
+            return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
+        }
+
+        function escapeHTML(str) {
+            return String(str || '').replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[tag] || tag));
+        }
+
+        window.showToast = function(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toastMessage');
+            const iconEl = document.getElementById('toastIcon');
+
+            msgEl.innerText = message;
+            iconEl.innerHTML = type === 'success'
+                ? `<div class="w-6 h-6 bg-teal-500 text-white rounded-full flex items-center justify-center shrink-0"><i data-lucide="check" class="w-3.5 h-3.5"></i></div>`
+                : `<div class="w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center shrink-0"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i></div>`;
+            lucide.createIcons();
+
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 3200);
+        };
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('exportMenu');
+            if (menu && !menu.classList.contains('hidden') && !e.target.closest('button[onclick="toggleExportMenu()"]')) {
+                menu.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
